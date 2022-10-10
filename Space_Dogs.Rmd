@@ -28,19 +28,11 @@ We can remove the column Flight
 space_dogs <- 
 space_dogs %>% 
   #Change the name to the Name column
-  rename(Name = Dog) 
+  rename(Name = Name..Latin.) 
 
 
   
 ```
-
-
-
-```{r}
-space_dogs %>% 
-  count(Name..Latin., sort = TRUE)
-```
-
 
 
 ##Organize Flights database
@@ -108,22 +100,5 @@ flight_dogs_4 %>%
 ```{r}
 flight_dogs_4 %>% 
   count(Result)
-```
-
-
-
-
-##HUMANS and DOGS
-In this case we use the table "space_df"
-1- Create a table for all the years and species
-```{r}
-full_df <- 
-  expand_grid(Year = 1951:1970, Species = c("Human", "Dog")) 
-
- space_df %>% 
-  right_join(full_df, by = c("Year", "Species")) %>% 
-   replace_na(list(n_in_space = 0L)) %>% 
-   ggplot(aes(x = Year, y = n_in_space, colour = Species)) +
-            geom_line()
 ```
 
