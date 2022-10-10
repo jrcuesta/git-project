@@ -97,8 +97,4 @@ flight_dogs_4 %>%
   coord_flip()
 ```
 
-```{r}
-flight_dogs_4 %>% 
-  count(Result)
-```
 
