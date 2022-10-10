@@ -1,0 +1,129 @@
+---
+title: "Space Dogs"
+author: "Jose Ramon Cuesta"
+date: '2022-08-11'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+##Organize Dogs database
+```{r}
+space_dogs <- 
+Dogs.Database %>% 
+  select(Name..Latin., Gender, Flights, Fate) %>% 
+  separate(Flights, into = c("date_1",  "date_2", "date_3", "date_4", "date_5", "date_6", "date_7"), sep = ",") %>% 
+  pivot_longer(date_1:date_7, names_to = "Flight", values_to = "Date" ) %>% 
+  drop_na(Date)
+```
+We can remove the column Flight
+```{r}
+space_dogs <- 
+space_dogs %>% 
+  #Change the name to the Name column
+  rename(Name = Dog) 
+
+
+  
+```
+
+
+
+```{r}
+space_dogs %>% 
+  count(Name..Latin., sort = TRUE)
+```
+
+
+
+##Organize Flights database
+```{r}
+flight_dogs <- 
+Flights.Database %>% 
+  separate(Dogs, into = c("Dog_1",  "Dog_2"), sep = ",")
+```
+
+Ahora se podría hacer un pivot_longer con Dog_1 y Dog_2
+```{r}
+ flight_dogs_1 <- 
+ flight_dogs %>% 
+  pivot_longer(c(Dog_1, Dog_2), names_to = "Dog_ID", values_to = "Name") %>% 
+  rename(Altitude = Altitude..km.)
+```
+
+```{r}
+flight_dogs_2 <- 
+flight_dogs_1 %>% 
+  full_join(space_dogs, by = c("Date", "Name"))
+```
+
+Ahora se podría hacer un pivot_wider con Dog_1 y Dog_2, creando también las columnas Gender_1 y Gender_2. También las Fate_1 y Fate_2 para conocer el destino de cada perro.
+```{r}
+flight_dogs_3 <- 
+flight_dogs_2 %>% 
+  mutate(Dog_gender = rep(c("Gender_1", "Gender_2"), 42)) %>% 
+  mutate(Dog_fate = rep(c("Fate_1", "Fate_2"), 42)) %>% 
+  select(Date, Rocket, Altitude, Dog_ID, Name, Dog_gender, Gender, Dog_fate, Fate, Result, Notes)
+```
+
+```{r}
+flight_dogs_4 <- 
+flight_dogs_3 %>% 
+  pivot_wider(names_from = starts_with("Dog_"), 
+              values_from = c(Name, Gender, Fate))
+```
+
+```{r}
+flight_dogs_4 <- 
+flight_dogs_4 %>% 
+  rename(Name_Dog_1 = Name_Dog_1_Gender_1_Fate_1) %>% 
+  rename(Name_Dog_2 = Name_Dog_2_Gender_2_Fate_2) %>% 
+  rename(Gender_Dog_1 = Gender_Dog_1_Gender_1_Fate_1) %>% 
+  rename(Gender_Dog_2 = Gender_Dog_2_Gender_2_Fate_2) %>% 
+  rename(Fate_Dog_1 = Fate_Dog_1_Gender_1_Fate_1) %>% 
+  rename(Fate_Dog_2 = Fate_Dog_2_Gender_2_Fate_2)
+```
+
+```{r}
+flight_dogs_4 %>% 
+  unite("Ocupants", "Name_Dog_1", "Name_Dog_2", sep = ",", na.rm = TRUE) %>% 
+  mutate(Altitude = as.factor(Altitude)) %>%
+  #Quitamos los vuelos en los que la altura no está confirmada
+  filter(Altitude != "unknown") %>% 
+  filter(Altitude != "was to be orbital") %>% 
+  ggplot(aes(x = Date, y = Altitude )) + 
+  geom_col() +
+  geom_text(aes(label = Ocupants), angle = 0, colour = "white", hjust = 0.9) +
+  geom_text(aes(label = Result), angle = 0, colour = "red", hjust = 0) +
+  coord_flip()
+```
+
+```{r}
+flight_dogs_4 %>% 
+  count(Result)
+```
+
+
+
+
+##HUMANS and DOGS
+In this case we use the table "space_df"
+1- Create a table for all the years and species
+```{r}
+full_df <- 
+  expand_grid(Year = 1951:1970, Species = c("Human", "Dog")) 
+
+ space_df %>% 
+  right_join(full_df, by = c("Year", "Species")) %>% 
+   replace_na(list(n_in_space = 0L)) %>% 
+   ggplot(aes(x = Year, y = n_in_space, colour = Species)) +
+            geom_line()
+```
+
